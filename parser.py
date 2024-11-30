@@ -26,13 +26,18 @@ class BasicParser(Parser):
     # Statement list
     @_('stmt stmt_list')
     def stmt_list(self, p):
-        return [p[0]] + p[1]
+        p[1].add_statement(p[0])
+        return p[1]
 
     @_('')
     def stmt_list(self, p):
-        return []
+        return basic_ast.StatementsAST()
 
     # Statements
+    @_('REM')
+    def stmt(self, p):
+        return basic_ast.NoopAST()
+
     @_('assignment')
     def stmt(self, p):
         return p[0]
@@ -45,10 +50,30 @@ class BasicParser(Parser):
     def stmt(self, p):
         return p[0]
 
+    @_('for_stmt')
+    def stmt(self, p):
+        return p[0]
+
+    # For Statement
+
+    @_('FOR IDENTIFIER EQ expr TO expr step stmt_list NEXT')
+    def for_stmt(self, p):
+        return basic_ast.ForAST(
+                basic_ast.FactorAST(p[1], 'symbol'),
+                p[3], p[5], p[6], p[7])
+
+    @_('STEP expr')
+    def step(self, p):
+        return p[1]
+
+    @_('')
+    def step(self, p):
+        return basic_ast.FactorAST(1, 'constant_int')
+
     # While statement
     @_('WHILE expr DO stmt_list WEND')
     def while_stmt(self, p):
-        return ('while', p[1], p[3])
+        return basic_ast.WhileAST(p[1], p[3])
 
     # Assignment
     @_('LET IDENTIFIER EQ expr')
@@ -59,10 +84,23 @@ class BasicParser(Parser):
     def assignment(self, p):
         return basic_ast.AssignmentAST(p[0], p[2])
 
-    # If statement
-    @_('IF expr THEN stmt_list END IF')
+    # If statements
+    @_('IF expr THEN stmt_list else_stmts END IF')
     def if_stmt(self, p):
-        return basic_ast.IfAST(p[1], p[3])
+        return basic_ast.IfAST(p[1], p[3], p[4])
+
+    @_('ELSEIF expr THEN stmt_list else_stmts')
+    def else_stmts(self, p):
+        return basic_ast.IfAST(p[1], p[3], p[4])
+
+    @_('ELSE stmt_list')
+    def else_stmts(self, p):
+        return p[1]
+
+    @_('')
+    def else_stmts(self, p):
+        return basic_ast.NoopAST()
+
 
     # Expression rules with comparison operators
     @_('expr LE expr')
@@ -146,6 +184,7 @@ class BasicParser(Parser):
             line_content = self.lexer.line_content.get(p.lineno, "Unknown line")
             print(f"Syntax error at line {p.lineno}")
             print(f"{line_content}")
+            exit(1)
         else:
             print("EOF")
 
@@ -157,17 +196,25 @@ if __name__ == '__main__':
     # Test code
     code = """
     LET x = 10
-    LET y = 20
+    LET y = 20 + 30
     IF x > 0 THEN
         x = 53
+    ELSEIF x > 0 THEN
+        x = 52
+    ELSEIF x > 0 THEN
+        x = 51
     END IF
-    REM WHILE z > 0 DO
-    REM     z = z - 1
-    REM WEND
+    FOR i = 0 TO 100 STEP 3
+        z = 100
+        WHILE z > 0 DO
+           z = z - 1
+        WEND
+    NEXT
     """
 
     try:
-        result = parser.parse(lexer.tokenize(code))
+        tokens = lexer.tokenize(code)
+        result = parser.parse(tokens)
         result.traverse_print()
     except Exception as e:
         print(e)

@@ -5,7 +5,7 @@ class BasicLexer(Lexer):
         PLUS, MINUS, TIMES, DIVIDE, LPAREN, RPAREN,
         AND, OR, XOR, NOT,
         LT, LE, GT, GE, NE, EQ,
-        IF, THEN, ELSE, END,
+        IF, THEN, ELSEIF, ELSE, END,
         FOR, TO, STEP, NEXT,
         DO, WHILE, WEND,
         PRINT, INPUT, DIM, LET,
@@ -37,6 +37,7 @@ class BasicLexer(Lexer):
     XOR     = r'XOR'
     NOT     = r'NOT'
     LET     = r'LET'
+    ELSEIF  = r'ELSEIF'
     IF      = r'IF'
     ELSE    = r'ELSE'
     THEN    = r'THEN'
@@ -54,8 +55,8 @@ class BasicLexer(Lexer):
     GOTO    = r'GOTO'
     MARK    = r':'
     RETURN  = r'RETURN'
-    REM     = r'REM'
     STOP    = r'STOP'
+    REM     = r"(REM[^\n].*)"
 
     IDENTIFIER = r'[a-zA-Z_][a-zA-Z0-9_]*'
     NUMBER = r'\d+'
@@ -72,10 +73,6 @@ class BasicLexer(Lexer):
         for lineno, line in enumerate(code.splitlines(), start=1):
             self.line_content[lineno] = line
         return super().tokenize(code)
-
-    @_(r'REM .*')
-    def REM(self, t):
-        pass
 
     def error(self, t):
         print(f"Invalid token: '{t.value[0]}' at line {self.lineno}")

@@ -8,8 +8,9 @@ class AST:
     def traverse_do(self, symbol_table):
         pass
 
-    def __repr__(self):
-        return ""
+class NoopAST(AST):
+    def traverse_print(self, level=0):
+        print(" " * level * 2, "noop")
 
 class FactorAST(AST):
     def __init__(self, factor, factor_type):
@@ -17,7 +18,8 @@ class FactorAST(AST):
         self.type = factor_type
 
     def traverse_print(self, level=0):
-        print(" " * level * 2, f"{self.factor}({self.type})", sep='')
+        print(" " * level * 2, f"{self.factor}({self.type})", sep='', end='')
+        print()
 
 class OperationAST(AST):
     def __init__(self, operand1, operator, operand2):
@@ -27,8 +29,9 @@ class OperationAST(AST):
 
     def traverse_print(self, level=0):
         self.operand1.traverse_print(level + 1)
-        print(" " * level * 2, f"{self.operator}", sep='')
+        print(" " * level * 2, f" {self.operator} ", sep='')
         self.operand2.traverse_print(level + 1)
+        print()
 
 class AssignmentAST(AST):
     def __init__(self, symbol, expression):
@@ -40,18 +43,69 @@ class AssignmentAST(AST):
         self.expression.traverse_print(level + 1)
 
 class IfAST(AST):
+    def __init__(self, condition, stmts, elsestmts):
+        self.condition = condition
+        self.stmts = stmts
+        self.elsestmts = elsestmts
+
+    def traverse_print(self, level=0):
+        indent = " " * level * 2
+        print(f"{indent}IF")
+        self.condition.traverse_print(level + 1)
+        print(f"{indent}THEN")
+        self.stmts.traverse_print(level + 1)
+        print(f"{indent}ELSE")
+        self.elsestmts.traverse_print(level + 1)
+        print(f"{indent}END IF")
+
+class WhileAST(AST):
     def __init__(self, condition, stmts):
         self.condition = condition
         self.stmts = stmts
 
     def traverse_print(self, level=0):
-        print(" " * level * 2, f"IF {self.condition} THEN", sep='')
+        indent = " " * level * 2
+        print(f"{indent}WHILE")
+        self.condition.traverse_print(level + 1)
+        print(f"{indent}THEN")
+        self.stmts.traverse_print(level + 1)
+        print(f"{indent}WEND")
+
+class ForAST(AST):
+    def __init__(self, symbol, start, end, step, stmts):
+        self.symbol = symbol
+        self.start = start
+        self.end = end
+        self.step = step
+        self.stmts = stmts
+
+    def traverse_print(self, level=0):
+        indent = " " * level * 2
+        print(f"{indent}FOR")
+        self.symbol.traverse_print(level + 1)
+        print(f"{indent}FROM")
+        self.start.traverse_print(level + 1)
+        print(f"{indent}TO")
+        self.end.traverse_print(level + 1)
+        print(f"{indent}STEP")
+        self.step.traverse_print(level + 1)
+        print(f"{indent}DO")
+        self.stmts.traverse_print(level + 1)
+        print(f"{indent}NEXT")
+
+class StatementsAST(AST):
+    def __init__(self):
+        self.stmts = []
+
+    def add_statement(self, stmt):
+        self.stmts = [stmt] + self.stmts
+        return self
+
+    def traverse_print(self, level=0):
         for stmt in self.stmts:
             if not hasattr(stmt, 'traverse_print'):
-                print(stmt)
                 continue
             stmt.traverse_print(level + 1)
-
 
 class FunctionAST(AST):
     def __init__(self, name, stmts):
@@ -60,9 +114,4 @@ class FunctionAST(AST):
 
     def traverse_print(self, level=0):
         print(" " * level * 2, f"{self.name}", sep='')
-        for stmt in self.stmts:
-            if not hasattr(stmt, 'traverse_print'):
-                print(stmt)
-                continue
-            stmt.traverse_print(level + 1)
-
+        self.stmts.traverse_print()
