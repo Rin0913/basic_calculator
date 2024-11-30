@@ -22,12 +22,12 @@ class BasicLexer(Lexer):
     TIMES   = r'\*'
     DIVIDE  = r'/'
 
-    LT      = r'<'
     LE      = r'<='
-    GT      = r'>'
     GE      = r'>='
-    EQ      = r'='
     NE      = r'!='
+    LT      = r'<'
+    GT      = r'>'
+    EQ      = r'='
 
     LPAREN  = r'\('
     RPAREN  = r'\)'

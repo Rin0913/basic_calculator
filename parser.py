@@ -54,13 +54,19 @@ class BasicParser(Parser):
     def stmt(self, p):
         return p[0]
 
+    @_('expr')
+    def stmt(self, p):
+        return p[0]
+
     # For Statement
 
     @_('FOR IDENTIFIER EQ expr TO expr step stmt_list NEXT')
     def for_stmt(self, p):
+        symbol = basic_ast.FactorAST(p[1], 'symbol')
         return basic_ast.ForAST(
-                basic_ast.FactorAST(p[1], 'symbol'),
-                p[3], p[5], p[6], p[7])
+                symbol,
+                basic_ast.AssignmentAST(symbol, p[3]),
+                p[5], p[6], p[7])
 
     @_('STEP expr')
     def step(self, p):
@@ -71,18 +77,22 @@ class BasicParser(Parser):
         return basic_ast.FactorAST(1, 'constant_int')
 
     # While statement
-    @_('WHILE expr DO stmt_list WEND')
+    @_('WHILE expr stmt_list WEND')
     def while_stmt(self, p):
-        return basic_ast.WhileAST(p[1], p[3])
+        return basic_ast.WhileAST(p[1], p[2])
 
     # Assignment
     @_('LET IDENTIFIER EQ expr')
     def assignment(self, p):
-        return basic_ast.AssignmentAST(p[1], p[3])
+        return basic_ast.AssignmentAST(
+                basic_ast.FactorAST(p[1], 'symbol'),
+                p[3])
 
     @_('IDENTIFIER EQ expr')
     def assignment(self, p):
-        return basic_ast.AssignmentAST(p[0], p[2])
+        return basic_ast.AssignmentAST(
+                basic_ast.FactorAST(p[0], 'symbol'),
+                p[2])
 
     # If statements
     @_('IF expr THEN stmt_list else_stmts END IF')
@@ -138,7 +148,8 @@ class BasicParser(Parser):
 
     @_('NOT expr')
     def expr(self, p):
-        return basic_ast.OperationAST(p[1], 'NOT')
+        return basic_ast.OperationAST(p[1], 'XOR', 
+                                      basic_ast.FactorAST(0, 'constant_int'))
 
     # Arithmetic expressions
     @_('term')
@@ -172,7 +183,7 @@ class BasicParser(Parser):
 
     @_('NUMBER')
     def factor(self, p):
-        return basic_ast.FactorAST(p[0], 'constant_int')
+        return basic_ast.FactorAST(int(p[0]), 'constant_int')
 
     @_('IDENTIFIER')
     def factor(self, p):
